@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Label Master Tool</title>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <style>
+        :root { 
+            --header-bg: #ffffff; 
+            --fk-blue: #2874f0; 
+            --fk-orange: #fb641b; 
+            --bg: #f1f5f9; 
+            --danger: #ef4444; 
+            --fk-yellow: #ffd814;
+        }
+        
+        body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; min-height: 100vh; display: flex; flex-direction: column; }
+        
+        /* HEADER */
+        .top-banner { 
+            background: var(--header-bg); 
+            min-height: 100px;
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 6px solid var(--fk-yellow); 
+            padding: 10px 60px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .welcome-area h1 { margin: 0; font-size: 24px; font-weight: 800; color: var(--fk-blue); max-width: 600px; }
+
+        .nav-links { display: flex; gap: 15px; }
+        .nav-links a { 
+            text-decoration: none; color: var(--fk-blue); font-weight: 700; font-size: 16px; 
+            padding: 10px 20px; border: 2px solid var(--fk-blue); border-radius: 8px; transition: 0.3s;
+        }
+        .nav-links a:hover { background: var(--fk-blue); color: white; }
+
+        /* CENTERED CONTAINER */
+        .main-content { 
+            flex: 1; 
+            display: flex; 
+            justify-content: center; 
+            padding: 40px 20px; 
+        }
+
+        .work-area { 
+            width: 100%; 
+            max-width: 850px; 
+            display: flex; 
+            flex-direction: column; 
+            gap: 30px; 
+        }
+
+        .card { 
+            background: white; 
+            border-radius: 15px; 
+            padding: 35px; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.08); 
+        }
+
+        /* RESTORED DROP BOX STYLING */
+        .drop-box { 
+            border: 3px dashed #cbd5e1; 
+            border-radius: 12px; 
+            padding: 50px; 
+            text-align: center; 
+            cursor: pointer; 
+            background: #fcfcfc; 
+            transition: 0.2s; 
+        }
+        .drop-box:hover { border-color: var(--fk-blue); background: #f8fafc; }
+        .drop-box h3 { font-size: 26px; line-height: 1.3; margin: 15px 0; color: var(--fk-blue); }
+        .drop-box p { color: #64748b; font-size: 18px; }
+
+        .file-column { display: flex; flex-direction: column; gap: 10px; margin-top: 20px; }
+        .file-item { 
+            background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; 
+            border-radius: 10px; display: flex; justify-content: space-between; align-items: center; 
+        }
+        .remove-btn { color: #94a3b8; cursor: pointer; font-size: 34px; font-weight: bold; padding: 0 10px; }
+        .remove-btn:hover { color: var(--danger); }
+
+        .action-btn { 
+            background: var(--fk-orange); color: white; border: none; padding: 22px; 
+            border-radius: 8px; font-size: 20px; font-weight: 800; width: 100%; 
+            cursor: pointer; text-transform: uppercase; box-shadow: 0 4px 15px rgba(251, 100, 27, 0.3); 
+        }
+        .action-btn:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; }
+
+        .history-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+        .history-table th { text-align: left; padding: 12px; color: #64748b; border-bottom: 2px solid #f1f5f9; }
+        .history-table td { padding: 12px; border-bottom: 1px solid #f1f5f9; font-size: 15px; }
+
+        .guide-section { border-top: 4px solid var(--fk-blue); margin-top: 20px; }
+        .guide-section h2 { color: var(--fk-blue); font-size: 22px; margin-bottom: 20px; }
+        .steps-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .step-item { font-size: 15px; line-height: 1.5; color: #475569; }
+        .step-item b { color: #1e293b; display: block; margin-bottom: 5px; }
+
+        footer { background: #1e293b; color: #94a3b8; text-align: center; padding: 20px; font-size: 14px; }
+    </style>
+</head>
+<body>
+
+<div class="top-banner">
+    <div class="welcome-area">
+        <h1>Flipkart and Meesho Labels Merge, SKU-Short and Crop Tool</h1>
+    </div>
+    <div class="nav-links">
+        <a href="#">Flipkart 3x5</a>
+        <a href="#">Meesho 4x6</a>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="work-area">
+        <div class="card">
+            <div class="drop-box" id="dropZone">
+                <span style="font-size: 65px;">📂</span>
+                <h3>Drag & Drop Multiple Flipkart Labels Here</h3>
+                <p>Or click to select files</p>
+                <input type="file" id="fileInput" accept="application/pdf" multiple style="display:none">
+            </div>
+            <div id="filePreview" class="file-column"></div>
+            <button id="processBtn" class="action-btn" disabled>Generate Master PDF</button>
+        </div>
+
+        <div class="card">
+            <div style="display:flex; justify-content:space-between; align-items: center;">
+                <span style="font-weight: 800; color: #475569; font-size: 18px;">Recent History</span>
+                <button onclick="clearHistory()" style="background:none; border:none; color:var(--danger); cursor:pointer; font-weight:bold; font-size:14px;">RESET</button>
+            </div>
+            <table class="history-table">
+                <thead><tr><th>File Name</th><th>Date / Time</th></tr></thead>
+                <tbody id="historyBody"></tbody>
+            </table>
+        </div>
+
+        <div class="card guide-section">
+            <h2>Process Guide</h2>
+            <div class="steps-grid">
+                <div class="step-item"><b>1. Upload PDFs</b>Multiple labels can be uploaded at once.</div>
+                <div class="step-item"><b>2. Auto-Clean</b>The system removes duplicate Order IDs.</div>
+                <div class="step-item"><b>3. SKU Sorting</b>Labels sorted by SKU name.</div>
+                <div class="step-item"><b>4. Thermal Ready</b>Master PDF generated for 3x5 or 4x6.</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer>
+    &copy; 2026 <span>Internal Logistics Tool</span> | Thermal Label Optimizer
+</footer>
+
+<script>
+    // Functional code remains unchanged
+    let uploadedFiles = [];
+
+    function updateHistoryUI() {
+        const history = JSON.parse(localStorage.getItem('fk_history') || '[]');
+        document.getElementById('historyBody').innerHTML = history.length 
+            ? history.map(h => `<tr><td>${h.name}</td><td>${h.time}</td></tr>`).join('')
+            : '<tr><td colspan="2" style="text-align:center; padding:20px; color:#999;">No history yet</td></tr>';
+    }
+
+    function saveToHistory(name) {
+        const now = new Date();
+        const timeLog = now.toLocaleDateString('en-GB') + ' ' + now.toLocaleTimeString();
+        let history = JSON.parse(localStorage.getItem('fk_history') || '[]');
+        history.unshift({ name, time: timeLog });
+        localStorage.setItem('fk_history', JSON.stringify(history.slice(0, 3)));
+        updateHistoryUI();
+    }
+
+    const dropZone = document.getElementById('dropZone');
+    const fileInput = document.getElementById('fileInput');
+    const preview = document.getElementById('filePreview');
+    const processBtn = document.getElementById('processBtn');
+
+    dropZone.onclick = () => fileInput.click();
+    fileInput.onchange = (e) => handleFiles(e.target.files);
+
+    function handleFiles(files) {
+        for (let file of files) {
+            if (file.type === "application/pdf") {
+                uploadedFiles.push({ id: Math.random().toString(36).substr(2, 9), file: file });
+            }
+        }
+        renderFiles();
+    }
+
+    function removeFile(id) { uploadedFiles = uploadedFiles.filter(f => f.id !== id); renderFiles(); }
+
+    function renderFiles() {
+        preview.innerHTML = uploadedFiles.map(item => `<div class="file-item">📄 ${item.file.name} <span class="remove-btn" onclick="removeFile('${item.id}')">×</span></div>`).join('');
+        processBtn.disabled = uploadedFiles.length === 0;
+    }
+
+    processBtn.onclick = async () => {
+        processBtn.innerText = "Processing...";
+        const { PDFDocument } = PDFLib;
+        const outDoc = await PDFDocument.create();
+        
+        for (let item of uploadedFiles) {
+            const arrayBuffer = await item.file.arrayBuffer();
+            const srcDoc = await PDFDocument.load(arrayBuffer);
+            const copiedPages = await outDoc.copyPages(srcDoc, srcDoc.getPageIndices());
+            copiedPages.forEach(page => {
+                page.setCropBox(189.5, 463.5, 216, 351);
+                outDoc.addPage(page);
+            });
+        }
+
+        const pdfBytes = await outDoc.save();
+        const fName = `Master_Labels_${new Date().getTime()}.pdf`;
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(new Blob([pdfBytes], { type: "application/pdf" }));
+        link.download = fName;
+        link.click();
+
+        saveToHistory(fName);
+        uploadedFiles = [];
+        renderFiles();
+        processBtn.innerText = "Generate Master PDF";
+    };
+
+    function clearHistory() { localStorage.removeItem('fk_history'); updateHistoryUI(); }
+    updateHistoryUI();
+</script>
+</body>
+</html>
