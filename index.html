@@ -15,9 +15,8 @@
             --meesho-pink: #9f2089;
         }
         
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); margin: 0; padding: 0; color: #333; min-height: 100vh; display: flex; flex-direction: column; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding: 0; min-height: 100vh; display: flex; flex-direction: column; }
         
-        /* PAGE LAYOUT WITH SIDEBARS */
         .page-layout {
             display: flex;
             justify-content: center;
@@ -68,10 +67,7 @@
             font-weight: bold;
             cursor: pointer;
             text-decoration: none;
-            transition: 0.3s;
-            box-shadow: 0 4px 10px rgba(159, 32, 137, 0.2);
         }
-        .meesho-link-btn:hover { transform: translateY(-2px); opacity: 0.9; }
         
         .card { 
             background: white; 
@@ -90,7 +86,8 @@
             text-align: center; 
             transition: 0.3s;
         }
-        .drop-box:hover { border-color: var(--fk-blue); background: #f0f7ff; }
+        /* Highlight jab file box ke upar ho */
+        .drop-box.dragover { border-color: var(--fk-blue); background: #f0f7ff; }
         .drop-box h3 { font-size: 24px; color: var(--fk-blue); margin: 15px 0; }
 
         .action-btn { 
@@ -103,7 +100,6 @@
 
         footer { background: #1e293b; color: #94a3b8; text-align: center; padding: 20px; margin-top: auto; }
 
-        /* Mobile Responsive */
         @media (max-width: 1200px) { .ad-sidebar { display: none; } }
     </style>
 </head>
@@ -121,11 +117,11 @@
         <div class="card">
             <div class="drop-box" id="dropZone">
                 <span style="font-size: 60px;">📂</span>
-                <h3>Drag & Drop Flipkart Labels Here</h3>
+                <h3>Drag & Drop Flipkart Labels</h3>
                 <p>Click to select PDF files</p>
                 <input type="file" id="fileInput" accept="application/pdf" multiple style="display:none">
             </div>
-            <div id="filePreview" style="margin-top:20px; font-size: 14px; color: #666;"></div>
+            <div id="filePreview" style="margin-top:20px;"></div>
             <button id="processBtn" class="action-btn" disabled>Generate Master PDF</button>
         </div>
     </div>
@@ -133,7 +129,7 @@
     <div class="ad-sidebar">Advertisement<br>Space</div>
 </div>
 
-<footer>&copy; 2026 Label Crop Tool | Fast Packing Solution</footer>
+<footer>&copy; 2026 Label Crop Tool</footer>
 
 <script>
     let uploadedFiles = [];
@@ -142,8 +138,38 @@
     const preview = document.getElementById('filePreview');
     const processBtn = document.getElementById('processBtn');
 
+    // Click karke file select karna
     dropZone.onclick = () => fileInput.click();
     fileInput.onchange = (e) => handleFiles(e.target.files);
+
+    // --- DRAG & DROP LOGIC (FIXED) ---
+    
+    // Prevent default behavior (PDF ko browser mein khulne se rokna)
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    // Hover effect dikhana
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+    });
+
+    // File drop hone par handle karna
+    dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+    }, false);
 
     function handleFiles(files) {
         for (let file of files) {
@@ -155,7 +181,7 @@
     }
 
     function renderFiles() {
-        preview.innerHTML = uploadedFiles.map(f => `<div style="padding:8px; border-bottom:1px solid #eee;">📄 ${f.file.name}</div>`).join('');
+        preview.innerHTML = uploadedFiles.map(f => `<div style="padding:10px; border-bottom:1px solid #eee;">📄 ${f.file.name}</div>`).join('');
         processBtn.disabled = uploadedFiles.length === 0;
     }
 
@@ -163,19 +189,15 @@
         processBtn.innerText = "Processing...";
         const { PDFDocument } = PDFLib;
         const outDoc = await PDFDocument.create();
-        
         for (let item of uploadedFiles) {
             const arrayBuffer = await item.file.arrayBuffer();
             const srcDoc = await PDFDocument.load(arrayBuffer);
             const copiedPages = await outDoc.copyPages(srcDoc, srcDoc.getPageIndices());
-            
             copiedPages.forEach(page => {
-                // Standard Flipkart 3x5 Thermal Label Crop
                 page.setCropBox(189.5, 463.5, 216, 351);
                 outDoc.addPage(page);
             });
         }
-        
         const pdfBytes = await outDoc.save();
         const link = document.createElement('a');
         link.href = URL.createObjectURL(new Blob([pdfBytes], { type: "application/pdf" }));
@@ -184,6 +206,5 @@
         processBtn.innerText = "Generate Master PDF";
     };
 </script>
-
 </body>
 </html>
